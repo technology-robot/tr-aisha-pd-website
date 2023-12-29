@@ -1,9 +1,11 @@
 {
-  "name": "react-monaco-file-tree",
+  "name": "react-tr-aisha-demo-gui",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@microsoft/fetch-event-source": "^2.0.1",
     "@fontsource/roboto": "^5.0.8",
     "@monaco-editor/react": "^4.4.2",
     "@mui/material": "^5.14.18",

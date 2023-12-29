@@ -1,22 +1,54 @@
-import { maxMessageLength, rag_api_uri } from "../common";
+import { rag_api_uri } from "../common";
 import { Directory, buildFileTree } from "../utils/file-manager";
 
-const queryMessage = (question: string, sessionId: string) => {
-  var response = {"response": "No response from me", "source_nodes": []};
+import { fetchEventSource } from "@microsoft/fetch-event-source";
+
+const queryMessage = async (question: string, sessionId: string, responseCallback: (dir: Directory) => void) => {
   const queryUrl = `${rag_api_uri}/message?question=${encodeURI(question)}&session_id=${sessionId}`;
-  const xhr = new XMLHttpRequest();
-  xhr.open('GET', queryUrl, false);
 
-  try {
-    xhr.send();
-
-    if (xhr.status === 200) {
-      const data = JSON.parse(xhr.responseText);
-      response = data;
-    }
-  } catch (err) {}
-
-  return response;
+  await fetchEventSource(queryUrl, {
+    method: "GET",
+    headers: {
+      Accept: "text/event-stream",
+    },
+    async onopen(res) {
+      if (res.ok && res.status === 200) {
+        console.log("Connection made ", res);
+      } else if (
+        res.status >= 400 &&
+        res.status < 500 &&
+        res.status !== 429
+      ) {
+        console.log("Client side error ", res);
+      }
+      processFilesFromResponse(
+        {
+          "response": "...",
+          "source_nodes": []
+        },
+        responseCallback
+      )
+    },
+    onmessage(event) {
+      const parsedData = JSON.parse(event.data);
+      processFilesFromResponse(
+        parsedData,
+        responseCallback
+      )
+    },
+    onclose() {
+      console.log("Connection closed by the server");
+    },
+    onerror(err) {
+      processFilesFromResponse(
+        {
+          "response": `There was an error from server: ${err}`,
+          "source_nodes": []
+        },
+        responseCallback
+      )
+    },
+  });
 }
 
 const processFilesFromResponse = (responseJson, callback: (dir: Directory) => void) => {
@@ -45,7 +77,7 @@ const processFilesFromResponse = (responseJson, callback: (dir: Directory) => vo
 
   var mainContent = responseJson.response;
   if (Object.keys(recommendations).length > 0) {
-    mainContent += "\n\nRecommended products:\n";
+    mainContent += "\n\n===\n\nRecommended products:\n";
     for (const title in recommendations) {
       mainContent += `- ${title}: ${recommendations[title]}\n`;
     }
@@ -75,13 +107,8 @@ export const messages = (sessionId: string, responseCallback) => [
   {
     id: "2",
     message: ({ previousValue, steps }) => {
-      const response = queryMessage(previousValue, sessionId);
-      processFilesFromResponse(response, responseCallback);
-      var message = response.response;
-      if (message.length > maxMessageLength) {
-        message = message.substring(0, maxMessageLength) + "...";
-      }
-      return message;
+      queryMessage(previousValue, sessionId, responseCallback);
+      return "[Please look at the editor]";
     },
     hideInput: false,
     trigger: "1"

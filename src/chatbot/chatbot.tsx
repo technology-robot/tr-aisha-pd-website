@@ -26,19 +26,17 @@ interface MyChatBotProps {
 export const MyChatBot = (props: MyChatBotProps) => {
     return (
         <ThemeProvider theme={otherFontTheme}>
-            <React.StrictMode>
-                <ChatBot
-                    hideBotAvatar={true}
-                    hideUserAvatar={true}
-                    placeholder="Chat with me"
-                    width="100%"
-                    height={standardGridHeight}
-                    userDelay={0}
-                    botDelay={0}
-                    customDelay={0}
-                    headerTitle={headerTitle}
-                    steps={props.steps} />
-            </React.StrictMode>
+            <ChatBot
+                hideBotAvatar={true}
+                hideUserAvatar={true}
+                placeholder="Chat with me"
+                width="100%"
+                height={standardGridHeight}
+                userDelay={0}
+                botDelay={0}
+                customDelay={0}
+                headerTitle={headerTitle}
+                steps={props.steps} />
         </ThemeProvider>
     );
 }
